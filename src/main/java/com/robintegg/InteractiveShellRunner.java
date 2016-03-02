@@ -14,6 +14,7 @@ import org.crsh.console.jline.internal.Configuration;
 import org.crsh.plugin.PluginLifeCycle;
 import org.crsh.shell.Shell;
 import org.crsh.shell.ShellFactory;
+import org.crsh.shell.impl.command.CRaSHShellFactory;
 import org.crsh.util.InterruptHandler;
 import org.fusesource.jansi.AnsiConsole;
 import org.springframework.beans.factory.DisposableBean;
@@ -36,8 +37,13 @@ public class InteractiveShellRunner implements CommandLineRunner, InitializingBe
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        ShellFactory shellFactory = crshBootstrapBean.getContext().getPlugin(ShellFactory.class);
-        shell = shellFactory.create(null);
+        CRaSHShellFactory shellFactory = (CRaSHShellFactory) crshBootstrapBean.getContext().getPlugin(ShellFactory.class);
+		String property = System.getProperty(TerminalFactory.JLINE_TERMINAL);
+		if (TerminalFactory.NONE.equals(property)) {
+			shell = shellFactory.create(null, false);
+		} else {
+			shell = shellFactory.create(null);
+		}
     }
 
     @Override
