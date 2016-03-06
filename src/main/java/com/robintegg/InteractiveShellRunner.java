@@ -23,95 +23,89 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-//@Component
 public class InteractiveShellRunner implements CommandLineRunner, InitializingBean, DisposableBean {
 
-	final private PluginLifeCycle crshBootstrapBean;
-	private Shell shell;
-	private Terminal term;
+    final private PluginLifeCycle crshBootstrapBean;
+    private Shell shell;
+    private Terminal term;
 
-	@Autowired
-	public InteractiveShellRunner(PluginLifeCycle crshBootstrapBean) {
-		this.crshBootstrapBean = crshBootstrapBean;
-	}
+    @Autowired
+    public InteractiveShellRunner(PluginLifeCycle crshBootstrapBean) {
+        this.crshBootstrapBean = crshBootstrapBean;
+    }
 
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		CRaSHShellFactory shellFactory = (CRaSHShellFactory) crshBootstrapBean.getContext()
-				.getPlugin(ShellFactory.class);
-
-		String terminal = System.getProperty("org.crsh.console.jline.terminal");
-		if (terminal.equals("none")) {
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        CRaSHShellFactory shellFactory = (CRaSHShellFactory) crshBootstrapBean.getContext().getPlugin(ShellFactory.class);
+		String property = System.getProperty(TerminalFactory.JLINE_TERMINAL);
+		if (TerminalFactory.NONE.equals(property)) {
 			shell = shellFactory.create(null, false);
 		} else {
 			shell = shellFactory.create(null);
 		}
-	}
+    }
 
-	@Override
-	public void destroy() throws Exception {
-		try {
-			if (term != null) {
-				term.restore();
-			}
-		} catch (Exception ignore) {
-		}
-	}
+    @Override
+    public void destroy() throws Exception {
+        try {
+            if (term != null) {
+                term.restore();
+            }
+        } catch (Exception ignore) {
+        }
+    }
 
-	@Override
-	public void run(String... args) throws Exception {
+    @Override
+    public void run(String... args) throws Exception {
 
-		if (shell != null) {
+        if (shell != null) {
 
-			term = TerminalFactory.create();
+            term = TerminalFactory.create();
 
-			//
-			String encoding = Configuration.getEncoding();
+            //
+            String encoding = Configuration.getEncoding();
 
-			// Use AnsiConsole only if term doesnt support Ansi
-			PrintStream out;
-			PrintStream err;
-			boolean ansi;
-			if (term.isAnsiSupported()) {
-				out = new PrintStream(
-						new BufferedOutputStream(term.wrapOutIfNeeded(new FileOutputStream(FileDescriptor.out)), 16384),
-						false, encoding);
-				err = new PrintStream(
-						new BufferedOutputStream(term.wrapOutIfNeeded(new FileOutputStream(FileDescriptor.err)), 16384),
-						false, encoding);
-				ansi = true;
-			} else {
-				out = AnsiConsole.out;
-				err = AnsiConsole.err;
-				ansi = false;
-			}
+            // Use AnsiConsole only if term doesnt support Ansi
+            PrintStream out;
+            PrintStream err;
+            boolean ansi;
+            if (term.isAnsiSupported()) {
+                out = new PrintStream(new BufferedOutputStream(term.wrapOutIfNeeded(new FileOutputStream(FileDescriptor.out)), 16384), false, encoding);
+                err = new PrintStream(new BufferedOutputStream(term.wrapOutIfNeeded(new FileOutputStream(FileDescriptor.err)), 16384), false, encoding);
+                ansi = true;
+            } else {
+                out = AnsiConsole.out;
+                err = AnsiConsole.err;
+                ansi = false;
+            }
 
-			//
-			FileInputStream in = new FileInputStream(FileDescriptor.in);
-			ConsoleReader reader = new ConsoleReader(null, in, out, term);
+            //
+            FileInputStream in = new FileInputStream(FileDescriptor.in);
+            ConsoleReader reader = new ConsoleReader(null, in, out, term);
 
-			//
-			final JLineProcessor processor = new JLineProcessor(ansi, shell, reader, out);
+            //
+            final JLineProcessor processor = new JLineProcessor(ansi, shell, reader, out);
 
-			//
-			InterruptHandler interruptHandler = new InterruptHandler(processor::interrupt);
-			interruptHandler.install();
+            //
+            InterruptHandler interruptHandler = new InterruptHandler(processor::interrupt);
+            interruptHandler.install();
 
-			//
-			Thread thread = new Thread(processor);
-			thread.setDaemon(true);
-			thread.start();
+            //
+            Thread thread = new Thread(processor);
+            thread.setDaemon(true);
+            thread.start();
 
-			try {
-				processor.closed();
-			} catch (Throwable t) {
-				t.printStackTrace();
-			}
 
-			System.exit(0);
+            try {
+                processor.closed();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+            
+            System.exit(0);
 
-		}
+        }
 
-	}
+    }
 
 }
