@@ -1,5 +1,5 @@
 # spring-boot-console
-Demo project for building a console application with spring boot
+Demo project for building a console application with spring boot. Further details are in the [robintegg.com blog](http://robintegg.com) 
 
 ## Debugging in eclipse
 
